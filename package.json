@@ -19,5 +19,11 @@
   "bugs": {
     "url": "https://github.com/jcb9090/popcorn-addon/issues"
   },
-  "homepage": "https://github.com/jcb9090/popcorn-addon"
+  "homepage": "https://github.com/jcb9090/popcorn-addon",
+  "dependencies": {
+    "async": "^1.5.0",
+    "lodash": "^3.10.1",
+    "needle": "^0.11.0",
+    "stremio-addons": "^1.17.10"
+  }
 }
