@@ -13,7 +13,9 @@ var manifest = {
     "id": "org.jcb9090.popcorn",
     "version": "1.0.0",
     "types": ["movie", "series"],
-    "filter": { "query.imdb_id": { "$exists": true }, "query.type": { "$in":["series","movie"] } }
+    "filter": { "query.imdb_id": { "$exists": true }, "query.type": { "$in":["series","movie"] } },
+    "contactEmail": "JBC9090@tuta.io"
+
 };
 
 /* SERVE DATA
