@@ -32,11 +32,16 @@ var addon = new stremio.Server({
         var isEp = args.query.hasOwnProperty('season');
         var hash = (isEp ? [args.query.imdb_id, args.query.season, args.query.episode] : [args.query.imdb_id]).join(" ");
 
+        // WARNING: TODO:  eztv can be on-demand instead of cached in map[]
+        // just hit eztvEndpoint/show/ + query.imdb_id 
+
         callback(null, _.map(map[hash] || [], function(infoHash, quality) { 
             return {
                 infoHash: infoHash.toLowerCase(),
                 tag: [quality].concat(quality == "1080p" ? ["hd"] : []).concat(isEp ? "eztv" : "yts"),
                 name: isEp ? "EZTV" : "YTS",
+                title: quality, 
+                isFree: true,
                 sources: [
                     'tracker:udp://tracker.leechers-paradise.org:6969/announce', 
                     'tracker:udp://tracker.pomf.se:80/announce', 'tracker:http://tracker.aletorrenty.pl:2710/announce',
