@@ -51,7 +51,7 @@ var addon = new stremio.Server({
             }
         }));
     }
-}, { secret: "8417fe936f0374fbd16a699668e8f3c4aa405d9f" }, manifest);
+}, { stremioget: true, secret: "8417fe936f0374fbd16a699668e8f3c4aa405d9f" }, manifest);
 
 var server = require("http").createServer(function (req, res) {
     addon.middleware(req, res, function() { res.end() }); // wire the middleware - also compatible with connect / express
