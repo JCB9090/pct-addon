@@ -38,7 +38,6 @@ var addon = new stremio.Server({
         callback(null, _.map(map[hash] || [], function(infoHash, quality) { 
             return {
                 infoHash: infoHash.toLowerCase(),
-                tag: [quality].concat(quality == "1080p" ? ["hd"] : []).concat(isEp ? "eztv" : "yts"),
                 name: isEp ? "EZTV" : "YTS",
                 title: quality, 
                 isFree: true,
