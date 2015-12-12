@@ -32,4 +32,5 @@ And open a movie/episode available on YTS or EZTV, now you will see it in the av
 
 ## HOw to help?
 This add-on is pretty much complete, but if you find a bug, open an issue report.
+
 **Please consider helping me host this so that it can be available for all stremio users easily!**
