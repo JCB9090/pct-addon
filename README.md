@@ -27,7 +27,7 @@ And open a movie/episode available on YTS or EZTV, now you will see it in the av
 
 
 ## Screenshot
-![screenshot](screenshot/demo.png)
+![screenshot](/screenshots/demo.png)
 
 
 ## HOw to help?
