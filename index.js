@@ -23,13 +23,9 @@ var map = { };
 try { map = JSON.parse(fs.readFileSync(cachePath).toString()) } catch(e) { console.error("non-fatal( cache)", e) }
 console.log("-> map has "+Object.keys(map).length+" movies / eps");
 
-setInterval(function() {
-    var start = Date.now();
-    fs.writeFile(cachePath, JSON.stringify(map), function(e) { if (e) console.error(e) });
-    console.log("-> stringifying cache took "+(Date.now()-start)+"ms");
-}, 20*1000);
-
 var addon = new stremio.Server({
+    // TODO intercept meta.find so we can change the catalogues too
+
     "stream.find": function(args, callback, user) {
         if (! args.query) return callback();
 
@@ -41,7 +37,11 @@ var addon = new stremio.Server({
                 infoHash: infoHash.toLowerCase(),
                 tag: [quality].concat(quality == "1080p" ? ["hd"] : []).concat(isEp ? "eztv" : "yts"),
                 name: isEp ? "EZTV" : "YTS",
-                sources: ['tracker:udp://tracker.leechers-paradise.org:6969/announce', 'tracker:udp://tracker.pomf.se:80/announce', 'tracker:http://tracker.aletorrenty.pl:2710/announce'],
+                sources: [
+                    'tracker:udp://tracker.leechers-paradise.org:6969/announce', 
+                    'tracker:udp://tracker.pomf.se:80/announce', 'tracker:http://tracker.aletorrenty.pl:2710/announce',
+                   // 'dht:'+infoHash // consider
+                ],
                 availability: 2 // todo: from seed/leech count
             }
         }));
@@ -53,7 +53,7 @@ var server = require("http").createServer(function (req, res) {
 }).on("listening", function()
 {
     console.log("Popcorn Addon listening on "+server.address().port);
-}).listen(process.env.PORT || 7000);
+}).listen(process.env.PORT || 7821);
 
 /* COLLECT DATA
  */
@@ -64,7 +64,10 @@ var httpOpts = {
     timeout: 4000,
     read_timeout: 4000
 };
-var queue = async.queue(function(url, next) {
+
+var ezQueue = async.queue(collector, 1);
+var ytsQueue = async.queue(collector, 1);
+function collector(url, next) {
     console.log("-> collecting from "+url);
     needle.get(url, httpOpts, function(err, resp, body) {
         process.nextTick(next);
@@ -72,12 +75,12 @@ var queue = async.queue(function(url, next) {
 
         // eztv - initial - list of /shows/N
         if (Array.isArray(body) && body[0] && typeof(body[0])=="string" && body[0].match("shows")) body.forEach(function(page) {
-            queue.push(url.replace('/shows/', '/'+page));
+            ezQueue.push(url.replace('/shows/', '/'+page));
         });
 
         // eztv - shows listing
         if (Array.isArray(body) && body[0] && body[0].tvdb_id) body.reverse().forEach(function(show) {
-            queue.push(url.split('/shows')[0]+'/show/'+show._id);
+            ezQueue.push(url.split('/shows')[0]+'/show/'+show._id);
         });
 
         // eztv - show
@@ -89,15 +92,23 @@ var queue = async.queue(function(url, next) {
 
             // next page
             if (body.data.page_number * body.data.limit < body.data.movie_count) 
-                queue.push(url.split("?")[0]+"?page="+(body.data.page_number+1));
+                ytsQueue.push(url.split("?")[0]+"?page="+(body.data.page_number+1));
         }
     });
-}, 1);
+}
 
 var sources = require("./sources");
-sources.yts.forEach(function(url) { queue.push(url) });
-sources.eztv.forEach(function(url) { queue.push(url) });
+sources.yts.forEach(function(url) { ytsQueue.push(url) });
+async.eachSeries(sources.eztv, function(url, cb) {
+    console.log("-> eztv trying frm "+url);
+    needle.get(url, httpOpts, function(err, resp, body) {
+        if (body && body[0] && typeof(body[0])=="string") { console.log("-> eztv responded from "+url); ezQueue.push(url); cb(true); }
+        else cb();
+    });
+}, function() {});
 
+/* PUT DATA IN MAP
+ */
 function indexMovie(movie) {
     if(movie && Array.isArray(movie.torrents)) movie.torrents.forEach(function(t) {
         if (!map[movie.imdb_code]) map[movie.imdb_code] = { };
@@ -122,3 +133,12 @@ function indexShow(show) {
         if (m['0'] && (m['1080p'] == m['0'] || m['720p'] == m['0'] || m['480p'] == m['0'])) delete m['0'];
     });
 }
+
+// save to cache periodically
+setInterval(function() {
+    var start = Date.now();
+    var n = Object.keys(map).length;
+    fs.writeFile(cachePath, JSON.stringify(map), function(e) { if (e) console.error(e) });
+    console.log("-> stringifying cache took "+(Date.now()-start)+"ms for "+n+" items");
+}, 30*1000);
+
