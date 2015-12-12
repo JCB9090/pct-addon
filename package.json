@@ -1,0 +1,23 @@
+{
+  "name": "popcorn-addon",
+  "version": "1.0.0",
+  "description": "add YTS and EZTV to stremio ",
+  "main": "popcorn.js",
+  "scripts": {
+    "test": "node test/*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/jbc9090/popcorn-addon"
+  },
+  "keywords": [
+    "eztv",
+    "yts"
+  ],
+  "author": "JCB9090",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jcb9090/popcorn-addon/issues"
+  },
+  "homepage": "https://github.com/jcb9090/popcorn-addon"
+}
