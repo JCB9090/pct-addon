@@ -90,10 +90,10 @@ function collector(url, next) {
         });
 
         // eztv - show
-        if (body._id && body.imdb_id && body.tvdb_id) indexShow(body);
+        if (body && body._id && body.imdb_id && body.tvdb_id) indexShow(body);
 
         // yts api - initial - /v2/list_movies.json
-        if (body.status && body.data && body.data.movies) { 
+        if (body && body.status && body.data && body.data.movies) { 
             body.data.movies.forEach(indexMovie);
 
             // next page
