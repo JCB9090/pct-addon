@@ -7,8 +7,8 @@ var magnet = require('magnet-uri');
 var path = require('path');
 
 var manifest = { 
-    "name": "Popcorn",
-    "description": "Watch from YTS and EZTV",
+    "name": "Popcorn Time",
+    "description": "Watch from YTS and EZTV in Stremio",
     //"icon": "URL to 256x256 monochrome png icon", "background": "URL to 1366x756 png background",
     "id": "org.jcb9090.popcorn",
     "version": "1.0.0",
