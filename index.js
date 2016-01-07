@@ -14,8 +14,8 @@ var manifest = {
     "version": "1.0.0",
     "types": ["movie", "series"],
     "filter": { "query.imdb_id": { "$exists": true }, "query.type": { "$in":["series","movie"] } },
-    "contactEmail": "JBC9090@tuta.io"
-
+    "contactEmail": "JBC9090@tuta.io",
+    "endpoint": "http://pct.addons4stremio.xyz"
 };
 
 /* SERVE DATA
