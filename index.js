@@ -56,7 +56,7 @@ var addon = new stremio.Server({
 }, { stremioget: true, secret: "8417fe936f0374fbd16a699668e8f3c4aa405d9f" }, manifest);
 
 var server = require("http").createServer(function (req, res) {
-    addon.middleware(req, res, function() { res.end() }); // wire the middleware - also compatible with connect / express
+    addon.middleware(req, res, function() { res.sendHeaders(302, {Location: manifest.endpoint+"/stremio/v1"}); res.end() }); // wire the middleware - also compatible with connect / express
 }).on("listening", function()
 {
     console.log("Popcorn Addon listening on "+server.address().port);
