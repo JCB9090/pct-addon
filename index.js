@@ -15,7 +15,8 @@ var manifest = {
     "types": ["movie", "series"],
     "filter": { "query.imdb_id": { "$exists": true }, "query.type": { "$in":["series","movie"] } },
     "contactEmail": "JBC9090@tuta.io",
-    "endpoint": "http://pct.addons4stremio.xyz"
+    "endpoint": "http://pct.addons4stremio.xyz",
+    "background": "https://raw.githubusercontent.com/butterproject/butter-desktop/master/src/app/images/bg-header.jpg"
 };
 
 /* SERVE DATA
