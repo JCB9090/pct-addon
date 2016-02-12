@@ -5,6 +5,7 @@ var needle = require("needle");
 var fs = require('fs');
 var magnet = require('magnet-uri');
 var path = require('path');
+var sift = require('sift');
 
 var manifest = { 
     "name": "Popcorn Time",
@@ -13,22 +14,28 @@ var manifest = {
     "id": "org.jcb9090.popcorn",
     "version": "1.0.0",
     "types": ["movie", "series"],
-    "filter": { "query.imdb_id": { "$exists": true }, "query.type": { "$in":["series","movie"] } },
+    "filter": { 
+        "query.imdb_id": { "$exists": true },
+        "query.type": { "$in":["series","movie"] },
+        "sort.popularities.yts": { "$exists": true },
+        "projection.imdb_id": { "$exists": true }
+    },
     "contactEmail": "JBC9090@tuta.io",
     "endpoint": "http://pct.addons4stremio.xyz/stremioget/stremio/v1",
-    "background": "https://raw.githubusercontent.com/butterproject/butter-desktop/master/src/app/images/bg-header.jpg"
+    "background": "https://raw.githubusercontent.com/butterproject/butter-desktop/master/src/app/images/bg-header.jpg",
+    sorts: [ { prop: "popularities.yts", name: "Popcorn Time", types: ["movie"] } ]
 };
 
 /* SERVE DATA
  */
 var cachePath = path.join(process.env.HOME || require("os").tmpdir(), "popcorn-cache.json");
-var map = { };
+var map = {  };
 try { map = JSON.parse(fs.readFileSync(cachePath).toString()) } catch(e) { console.error("non-fatal( cache)", e) }
 console.log("-> map has "+Object.keys(map).length+" movies / eps");
 
-var addon = new stremio.Server({
-    // TODO intercept meta.find so we can change the catalogues too
+map.topPages = map.topPages || [];
 
+var addon = new stremio.Server({
     "stream.find": function(args, callback, user) {
         if (! args.query) return callback();
 
@@ -52,6 +59,12 @@ var addon = new stremio.Server({
                 availability: 2 // todo: from seed/leech count
             }
         }));
+    },
+    "meta.find": function(args, callback, user) {
+        var results = _.flatten(map.topPages).filter(args.query ? sift(args.query) : _.constant(true))
+            .slice(args.skip || 0, (args.skip || 0) + Math.min(200, args.limit))
+            .sort(function(b,a) { return a.popularities.yts - b.popularities.yts })
+        return callback(null, results);
     }
 }, { stremioget: true, secret: "8417fe936f0374fbd16a699668e8f3c4aa405d9f" }, manifest);
 
@@ -97,6 +110,8 @@ function collector(url, next) {
         if (body && body.status && body.data && body.data.movies) { 
             body.data.movies.forEach(indexMovie);
 
+            if (body.data.page_number < 10) map.topPages[body.data.page_number] = body.data.movies.map(mapMetaToStremio);
+
             // next page
             if (body.data.page_number * body.data.limit < body.data.movie_count) 
                 ytsQueue.push(url.split("?")[0]+"?page="+(body.data.page_number+1));
@@ -105,8 +120,8 @@ function collector(url, next) {
 }
 
 var sources = require("./sources");
-sources.yts.forEach(function(url) { ytsQueue.push(url) });
-async.eachSeries(sources.eztv, function(url, cb) {
+if (!process.env.DISABLE_IDX) sources.yts.forEach(function(url) { ytsQueue.push(url) });
+if (!process.env.DISABLE_IDX) async.eachSeries(sources.eztv, function(url, cb) {
     console.log("-> eztv trying frm "+url);
     needle.get(url, httpOpts, function(err, resp, body) {
         if (body && body[0] && typeof(body[0])=="string") { console.log("-> eztv responded from "+url); ezQueue.push(url); cb(true); }
@@ -139,6 +154,21 @@ function indexShow(show) {
         var m = map[hash];
         if (m['0'] && (m['1080p'] == m['0'] || m['720p'] == m['0'] || m['480p'] == m['0'])) delete m['0'];
     });
+}
+
+function mapMetaToStremio(m) {
+    return {
+        imdb_id: m.imdb_code,
+        name: m.title,
+        year: m.year,
+        runtime: m.runtime,
+        rating: m.rating,
+        genre: m.genres,
+        description: m.summary,
+        poster: m.medium_cover_image,
+        type: "movie",
+        popularities: { yts: m.torrents[0].seeds }
+    }
 }
 
 // save to cache periodically
